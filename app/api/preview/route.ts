@@ -10,7 +10,7 @@ export async function GET() {
   <style>
     body {
       margin: 0;
-      background: #09090B;
+      background: #0A1024;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -24,7 +24,7 @@ export async function GET() {
       gap: 16px;
     }
     h1 {
-      color: #B4FF00;
+      color: #0066FF;
       font-size: 18px;
       font-weight: 400;
     }
@@ -32,7 +32,7 @@ export async function GET() {
       max-height: 90vh;
       width: auto;
       border-radius: 24px;
-      border: 2px solid #1A2600;
+      border: 2px solid #1A2540;
     }
   </style>
 </head>

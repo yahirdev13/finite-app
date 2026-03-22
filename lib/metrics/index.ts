@@ -1,17 +1,20 @@
-import { yearProgress, seasonProgress, decadeProgress, monthProgress } from "./time";
-import { calculateCountdowns } from "./countdowns";
+import { yearProgress } from "./time";
+import { lifeDayNumber, birthdayCountdown } from "./life";
 
-import type { YearProgress, SeasonProgress, DecadeProgress, MonthProgress } from "./time";
-import type { CountdownResult } from "./countdowns";
 import type { UserConfig } from "@/lib/config";
 
 export interface AllMetrics {
-  year: YearProgress;
-  season: SeasonProgress;
-  decade: DecadeProgress;
-  month: MonthProgress;
-  countdowns: CountdownResult[];
-  now: Date;
+  yearProgress: {
+    day: number;
+    total: number;
+    percentage: number;
+    remaining: number;
+  };
+  lifeDay: number;
+  birthdayCountdown: {
+    daysLeft: number;
+    percentage: number;
+  };
 }
 
 export function calculateAllMetrics(
@@ -19,11 +22,8 @@ export function calculateAllMetrics(
   config: UserConfig
 ): AllMetrics {
   return {
-    year: yearProgress(now),
-    season: seasonProgress(now),
-    decade: decadeProgress(now, config.date_of_birth),
-    month: monthProgress(now),
-    countdowns: calculateCountdowns(now, config.countdowns),
-    now,
+    yearProgress: yearProgress(now),
+    lifeDay: lifeDayNumber(now, config.date_of_birth),
+    birthdayCountdown: birthdayCountdown(now, config.date_of_birth),
   };
 }

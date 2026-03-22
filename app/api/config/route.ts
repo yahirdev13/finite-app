@@ -16,7 +16,16 @@ interface ValidationError {
   message: string;
 }
 
-function validateConfig(data: Partial<UserConfig>): ValidationError[] {
+const VALID_METRIC_KEYS = [
+  "year_progress",
+  "year_percentage",
+  "days_remaining",
+  "day_of_year",
+  "life_day",
+  "birthday_countdown",
+] as const;
+
+function validateConfig(data: Record<string, unknown>): ValidationError[] {
   const errors: ValidationError[] = [];
 
   if (data.name !== undefined) {
@@ -27,7 +36,7 @@ function validateConfig(data: Partial<UserConfig>): ValidationError[] {
 
   if (data.date_of_birth !== undefined) {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(data.date_of_birth)) {
+    if (typeof data.date_of_birth !== "string" || !dateRegex.test(data.date_of_birth)) {
       errors.push({ field: "date_of_birth", message: "date_of_birth must be YYYY-MM-DD" });
     } else {
       const dob = new Date(data.date_of_birth);
@@ -37,61 +46,45 @@ function validateConfig(data: Partial<UserConfig>): ValidationError[] {
     }
   }
 
+  if (data.life_expectancy !== undefined) {
+    if (typeof data.life_expectancy !== "number" || data.life_expectancy < 50 || data.life_expectancy > 120) {
+      errors.push({ field: "life_expectancy", message: "life_expectancy must be 50-120" });
+    }
+  }
+
   if (data.theme !== undefined) {
     if (data.theme !== "dark" && data.theme !== "light") {
       errors.push({ field: "theme", message: "theme must be 'dark' or 'light'" });
     }
   }
 
-  if (data.countdowns !== undefined) {
-    if (!Array.isArray(data.countdowns)) {
-      errors.push({ field: "countdowns", message: "countdowns must be an array" });
+  if (data.metrics !== undefined) {
+    if (typeof data.metrics !== "object" || data.metrics === null) {
+      errors.push({ field: "metrics", message: "metrics must be an object" });
     } else {
-      if (data.countdowns.length > 10) {
-        errors.push({ field: "countdowns", message: "max 10 countdowns allowed" });
-      }
-      for (let i = 0; i < data.countdowns.length; i++) {
-        const c = data.countdowns[i];
-        if (!c.label || c.label.length < 1 || c.label.length > 40) {
-          errors.push({ field: `countdowns[${i}].label`, message: "label must be 1-40 characters" });
+      const metrics = data.metrics as Record<string, unknown>;
+      for (const key of Object.keys(metrics)) {
+        if (!(VALID_METRIC_KEYS as readonly string[]).includes(key)) {
+          continue; // Silently ignore unknown metric keys
         }
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!c.date || !dateRegex.test(c.date)) {
-          errors.push({ field: `countdowns[${i}].date`, message: "date must be YYYY-MM-DD" });
+        if (typeof metrics[key] !== "boolean") {
+          errors.push({ field: `metrics.${key}`, message: `metrics.${key} must be a boolean` });
         }
-        if (c.emoji !== undefined && c.emoji.length > 2) {
-          errors.push({ field: `countdowns[${i}].emoji`, message: "emoji must be max 2 characters" });
-        }
-      }
-    }
-  }
-
-  if (data.goals !== undefined) {
-    const g = data.goals;
-    if (g.books_year !== undefined) {
-      if (g.books_year.current < 0 || g.books_year.current > 999) {
-        errors.push({ field: "goals.books_year.current", message: "must be 0-999" });
-      }
-      if (g.books_year.target < 1 || g.books_year.target > 999) {
-        errors.push({ field: "goals.books_year.target", message: "must be 1-999" });
-      }
-    }
-    if (g.projects_year !== undefined) {
-      if (g.projects_year.current < 0 || g.projects_year.current > 999) {
-        errors.push({ field: "goals.projects_year.current", message: "must be 0-999" });
-      }
-      if (g.projects_year.target < 1 || g.projects_year.target > 999) {
-        errors.push({ field: "goals.projects_year.target", message: "must be 1-999" });
-      }
-    }
-    if (g.savings_percent !== undefined) {
-      if (g.savings_percent < 0 || g.savings_percent > 100) {
-        errors.push({ field: "goals.savings_percent", message: "must be 0-100" });
       }
     }
   }
 
   return errors;
+}
+
+function sanitizeMetrics(metrics: Record<string, unknown>): Partial<UserConfig["metrics"]> {
+  const result: Record<string, boolean> = {};
+  for (const key of VALID_METRIC_KEYS) {
+    if (key in metrics && typeof metrics[key] === "boolean") {
+      result[key] = metrics[key] as boolean;
+    }
+  }
+  return result as Partial<UserConfig["metrics"]>;
 }
 
 export async function GET(request: NextRequest) {
@@ -109,7 +102,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json() as Partial<UserConfig>;
+    const body = await request.json() as Record<string, unknown>;
     const errors = validateConfig(body);
 
     if (errors.length > 0) {
@@ -120,15 +113,17 @@ export async function POST(request: NextRequest) {
     }
 
     const current = await getConfig();
+
+    // Build merged config, only accepting known fields
     const merged: UserConfig = {
       ...current,
-      ...body,
-      metrics: { ...current.metrics, ...(body.metrics || {}) },
-      goals: {
-        ...current.goals,
-        ...(body.goals || {}),
-        books_year: { ...current.goals.books_year, ...(body.goals?.books_year || {}) },
-        projects_year: { ...current.goals.projects_year, ...(body.goals?.projects_year || {}) },
+      ...(body.name !== undefined && { name: body.name as string }),
+      ...(body.date_of_birth !== undefined && { date_of_birth: body.date_of_birth as string }),
+      ...(body.life_expectancy !== undefined && { life_expectancy: body.life_expectancy as number }),
+      ...(body.theme !== undefined && { theme: body.theme as "dark" | "light" }),
+      metrics: {
+        ...current.metrics,
+        ...(body.metrics ? sanitizeMetrics(body.metrics as Record<string, unknown>) : {}),
       },
     };
 
@@ -141,7 +136,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ config: merged });
+    return NextResponse.json({ success: true, config: merged });
   } catch {
     return NextResponse.json(
       { error: "Invalid JSON body" },

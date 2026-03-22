@@ -17,14 +17,12 @@ interface ToastState {
 }
 
 const METRIC_LABELS: Record<string, { name: string; description: string }> = {
-  year_progress: { name: "Progreso del año", description: "Grid de 365 puntos" },
-  year_percentage: { name: "Porcentaje del año", description: "Stat card con %" },
-  days_remaining: { name: "Días restantes", description: "Días que faltan en el año" },
-  day_of_year: { name: "Día del año", description: "Stat card día/total" },
-  season_progress: { name: "Estación", description: "Barra de progreso de la estación" },
-  decade_progress: { name: "Década", description: "Progreso en tu década actual" },
-  month_progress: { name: "Mes", description: "Progreso del mes actual" },
-  countdowns: { name: "Countdowns", description: "Cuenta regresiva a eventos" },
+  year_progress: { name: "Progreso del año", description: "Grid de 365 puntos, 15 por fila (quincena)" },
+  year_percentage: { name: "Porcentaje del año", description: "Número grande con % del año transcurrido" },
+  days_remaining: { name: "Días restantes", description: "Días que faltan para terminar el año" },
+  day_of_year: { name: "Día del año", description: "Fracción día/total (ej: 81/365)" },
+  life_day: { name: "Día de tu vida", description: "Número de días desde que naciste" },
+  birthday_countdown: { name: "Countdown a cumpleaños", description: "Barra de progreso hasta tu próximo cumpleaños" },
 };
 
 function deepClone<T>(obj: T): T {
@@ -186,6 +184,29 @@ export default function AdminPage() {
                   updateDraft((d) => ({ ...d, date_of_birth: val }))
                 }
               />
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-[11px] font-medium text-muted uppercase tracking-widest">
+                    Expectativa de vida
+                  </span>
+                  <span className="text-sm font-semibold text-accent tabular-nums">
+                    {draft.life_expectancy} años
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={50}
+                  max={120}
+                  value={draft.life_expectancy}
+                  onChange={(e) =>
+                    updateDraft((d) => ({
+                      ...d,
+                      life_expectancy: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full"
+                />
+              </div>
             </div>
           </Collapsible>
 
@@ -210,179 +231,6 @@ export default function AdminPage() {
                   }
                 />
               ))}
-            </div>
-          </Collapsible>
-
-          {/* Countdowns */}
-          <Collapsible
-            title="Countdowns"
-            summary={`${draft.countdowns.length}`}
-          >
-            <div className="flex flex-col gap-3">
-              {draft.countdowns.map((c, i) => (
-                <div
-                  key={i}
-                  className="flex gap-2 items-end bg-input/40 rounded-lg p-3 border border-border/30"
-                >
-                  <label className="flex-1 flex flex-col gap-1">
-                    <span className="text-[10px] font-medium text-muted uppercase tracking-widest">
-                      Evento
-                    </span>
-                    <input
-                      type="text"
-                      value={c.label}
-                      onChange={(e) =>
-                        updateDraft((d) => {
-                          const arr = [...d.countdowns];
-                          arr[i] = { ...arr[i], label: e.target.value };
-                          return { ...d, countdowns: arr };
-                        })
-                      }
-                      maxLength={40}
-                      placeholder="Nombre"
-                      className="bg-input border border-border/50 rounded-lg px-3 py-2 text-sm text-primary placeholder:text-muted/40 focus:outline-none focus-ring"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-[10px] font-medium text-muted uppercase tracking-widest">
-                      Fecha
-                    </span>
-                    <input
-                      type="date"
-                      value={c.date}
-                      onChange={(e) =>
-                        updateDraft((d) => {
-                          const arr = [...d.countdowns];
-                          arr[i] = { ...arr[i], date: e.target.value };
-                          return { ...d, countdowns: arr };
-                        })
-                      }
-                      className="bg-input border border-border/50 rounded-lg px-3 py-2 text-sm text-primary focus:outline-none focus-ring"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateDraft((d) => ({
-                        ...d,
-                        countdowns: d.countdowns.filter((_, j) => j !== i),
-                      }))
-                    }
-                    className="p-2 text-muted hover:text-danger rounded-lg hover:bg-danger/10 transition-all"
-                    title="Eliminar"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M4.5 4.5L11.5 11.5M4.5 11.5L11.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-              {draft.countdowns.length < 10 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateDraft((d) => ({
-                      ...d,
-                      countdowns: [
-                        ...d.countdowns,
-                        {
-                          label: "",
-                          date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-                            .toISOString()
-                            .split("T")[0],
-                        },
-                      ],
-                    }))
-                  }
-                  className="w-full px-4 py-2.5 text-sm rounded-lg border border-dashed border-border text-muted hover:text-secondary hover:border-secondary/40 transition-all"
-                >
-                  + Agregar
-                </button>
-              )}
-            </div>
-          </Collapsible>
-
-          {/* Goals */}
-          <Collapsible title="Metas anuales">
-            <div className="flex flex-col gap-5">
-              <GoalRow
-                label="Libros"
-                current={draft.goals.books_year.current}
-                target={draft.goals.books_year.target}
-                onCurrentChange={(v) =>
-                  updateDraft((d) => ({
-                    ...d,
-                    goals: {
-                      ...d.goals,
-                      books_year: { ...d.goals.books_year, current: v },
-                    },
-                  }))
-                }
-                onTargetChange={(v) =>
-                  updateDraft((d) => ({
-                    ...d,
-                    goals: {
-                      ...d.goals,
-                      books_year: { ...d.goals.books_year, target: v },
-                    },
-                  }))
-                }
-              />
-              <GoalRow
-                label="Proyectos"
-                current={draft.goals.projects_year.current}
-                target={draft.goals.projects_year.target}
-                onCurrentChange={(v) =>
-                  updateDraft((d) => ({
-                    ...d,
-                    goals: {
-                      ...d.goals,
-                      projects_year: {
-                        ...d.goals.projects_year,
-                        current: v,
-                      },
-                    },
-                  }))
-                }
-                onTargetChange={(v) =>
-                  updateDraft((d) => ({
-                    ...d,
-                    goals: {
-                      ...d.goals,
-                      projects_year: {
-                        ...d.goals.projects_year,
-                        target: v,
-                      },
-                    },
-                  }))
-                }
-              />
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-[11px] font-medium text-muted uppercase tracking-widest">
-                    Ahorro mensual
-                  </span>
-                  <span className="text-sm font-semibold text-accent tabular-nums">
-                    {draft.goals.savings_percent}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={draft.goals.savings_percent}
-                  onChange={(e) =>
-                    updateDraft((d) => ({
-                      ...d,
-                      goals: {
-                        ...d.goals,
-                        savings_percent: Number(e.target.value),
-                      },
-                    }))
-                  }
-                  className="w-full"
-                />
-              </div>
             </div>
           </Collapsible>
 
@@ -426,33 +274,6 @@ export default function AdminPage() {
           onDismiss={() => setToast(null)}
         />
       )}
-    </div>
-  );
-}
-
-function GoalRow({
-  label,
-  current,
-  target,
-  onCurrentChange,
-  onTargetChange,
-}: {
-  label: string;
-  current: number;
-  target: number;
-  onCurrentChange: (v: number) => void;
-  onTargetChange: (v: number) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="text-[11px] font-medium text-muted uppercase tracking-widest">
-        {label}
-      </span>
-      <div className="flex items-center gap-3">
-        <NumberStepper value={current} onChange={onCurrentChange} min={0} max={999} />
-        <span className="text-muted text-lg font-light">/</span>
-        <NumberStepper value={target} onChange={onTargetChange} min={1} max={999} />
-      </div>
     </div>
   );
 }
@@ -523,45 +344,5 @@ function DateOfBirthInput({
         <span className="text-[10px] text-danger">Fecha inválida</span>
       )}
     </label>
-  );
-}
-
-function NumberStepper({
-  value,
-  onChange,
-  min,
-  max,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  min: number;
-  max: number;
-}) {
-  return (
-    <div className="flex items-center border border-border/50 rounded-lg overflow-hidden bg-input/60">
-      <button
-        type="button"
-        onClick={() => onChange(Math.max(min, value - 1))}
-        className="w-9 h-9 flex items-center justify-center text-muted hover:text-primary hover:bg-input-hover transition-colors text-base"
-      >
-        -
-      </button>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => {
-          const n = Number(e.target.value);
-          if (!isNaN(n) && n >= min && n <= max) onChange(n);
-        }}
-        className="w-11 h-9 text-center bg-transparent text-primary text-sm font-medium border-x border-border/30 focus:outline-none"
-      />
-      <button
-        type="button"
-        onClick={() => onChange(Math.min(max, value + 1))}
-        className="w-9 h-9 flex items-center justify-center text-muted hover:text-primary hover:bg-input-hover transition-colors text-base"
-      >
-        +
-      </button>
-    </div>
   );
 }
