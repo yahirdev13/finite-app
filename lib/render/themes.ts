@@ -1,17 +1,6 @@
-export interface Theme {
-  background: string;
-  accent: string;
-  text_bright: string;
-  text_dim: string;
-  text_faint: string;
-  text_white: string;
-  dot_active: string;
-  dot_inactive: string;
-  bar_track: string;
-  bar_fill: string;
-}
+// Color palettes and spacing constants for FINITE wallpaper
 
-export const darkTheme: Theme = {
+export const darkTheme = {
   background: "#0A1024",
   accent: "#0066FF",
   text_bright: "rgba(255,255,255,0.7)",
@@ -19,12 +8,12 @@ export const darkTheme: Theme = {
   text_faint: "rgba(255,255,255,0.2)",
   text_white: "#FFFFFF",
   dot_active: "#0066FF",
-  dot_inactive: "rgba(255,255,255,0.05)",
+  dot_inactive: "rgba(255,255,255,0.035)",
   bar_track: "rgba(255,255,255,0.04)",
   bar_fill: "#0066FF",
 };
 
-export const lightTheme: Theme = {
+export const lightTheme = {
   background: "#E6EBF5",
   accent: "#003D99",
   text_bright: "rgba(0,0,0,0.7)",
@@ -37,12 +26,11 @@ export const lightTheme: Theme = {
   bar_fill: "#003D99",
 };
 
+export type Theme = typeof darkTheme;
+
 export const SPACING = {
   safe_top: 560,
-  safe_bottom: 150,
-  horizontal: 60,
-  row_gap: 48,
-  dot_size: 28,
-  dot_gap: 6,
-  dots_per_row: 15,
+  safe_bottom: 230,
+  horizontal: 75,
+  row_gap: 75,
 };

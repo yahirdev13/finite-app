@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
 
-import { getConfig } from "@/lib/config-server";
+import { getConfig } from "@/lib/config";
 import type { UserConfig } from "@/lib/config";
 
 function checkAdminKey(request: NextRequest): boolean {

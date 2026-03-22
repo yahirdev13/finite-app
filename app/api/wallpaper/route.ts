@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { renderToPng } from "@/lib/png";
 import { WallpaperComponent } from "@/lib/render/wallpaper";
-import { getConfig } from "@/lib/config-server";
+import { getConfig } from "@/lib/config";
 import { calculateAllMetrics } from "@/lib/metrics";
 
 export async function GET(request: NextRequest) {

@@ -1,3 +1,8 @@
+// User configuration types and defaults
+// Only 6 metric toggles. No countdowns array. No goals object.
+
+import { kv } from "@vercel/kv";
+
 export interface UserConfig {
   date_of_birth: string;
   life_expectancy: number;
@@ -29,3 +34,26 @@ export const DEFAULT_CONFIG: UserConfig = {
     birthday_countdown: true,
   },
 };
+
+export async function getConfig(): Promise<UserConfig> {
+  try {
+    if (!process.env.KV_REST_API_URL) {
+      return DEFAULT_CONFIG;
+    }
+    const config = await kv.get<UserConfig>("config:user");
+    if (!config) {
+      return DEFAULT_CONFIG;
+    }
+    // Merge with defaults to handle missing fields from older configs
+    return {
+      ...DEFAULT_CONFIG,
+      ...config,
+      metrics: {
+        ...DEFAULT_CONFIG.metrics,
+        ...(config.metrics || {}),
+      },
+    };
+  } catch {
+    return DEFAULT_CONFIG;
+  }
+}

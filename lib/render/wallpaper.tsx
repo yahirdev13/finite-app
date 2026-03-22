@@ -1,8 +1,12 @@
+// Main wallpaper component — assembles all zones into final image
+// Structure: empty top (iOS) → Zone A (data) → spacer → Zone B (dots) → empty bottom (iOS)
+// NO greeting, NO date text, NO labels, NO captions
+
 import { YearStatsRow } from "./components/year-stats-row";
 import { LifeDayRow } from "./components/life-day-row";
 import { DotGrid } from "./components/dot-grid";
 import { darkTheme, lightTheme, SPACING } from "./themes";
-
+import type { Theme } from "./themes";
 import type { AllMetrics } from "@/lib/metrics";
 import type { UserConfig } from "@/lib/config";
 
@@ -19,7 +23,8 @@ export function WallpaperComponent({
   width,
   height,
 }: WallpaperProps): React.ReactElement {
-  const theme = config.theme === "dark" ? darkTheme : lightTheme;
+  const theme: Theme =
+    config.theme === "dark" ? darkTheme : lightTheme;
 
   const showRow1 =
     config.metrics.year_percentage ||
@@ -40,7 +45,7 @@ export function WallpaperComponent({
         flexDirection: "column",
       }}
     >
-      {/* Top safe area: EMPTY — iOS clock and date render here */}
+      {/* Top safe area — iOS renders clock and date here. We render NOTHING. */}
       <div style={{ height: SPACING.safe_top, flexShrink: 0 }} />
 
       {/* ZONE A: Data block */}
@@ -53,7 +58,7 @@ export function WallpaperComponent({
           flexShrink: 0,
         }}
       >
-        {/* Row 1: Year stats (same baseline) */}
+        {/* Row 1: 22%  81/365  284 left — same baseline */}
         {showRow1 && (
           <YearStatsRow
             percentage={metrics.yearProgress.percentage}
@@ -61,11 +66,10 @@ export function WallpaperComponent({
             total={metrics.yearProgress.total}
             remaining={metrics.yearProgress.remaining}
             theme={theme}
-            contentWidth={width - 2 * SPACING.horizontal}
           />
         )}
 
-        {/* Row 2: Life day + Birthday bar (bottom-aligned) */}
+        {/* Row 2: DAY 11,238 (left) + birthday bar (right) — bottom-aligned */}
         {showRow2 && (
           <LifeDayRow
             lifeDay={metrics.lifeDay}
@@ -78,10 +82,10 @@ export function WallpaperComponent({
         )}
       </div>
 
-      {/* SPACER: Pushes dot grid to the bottom */}
+      {/* Spacer — pushes dot grid to bottom */}
       <div style={{ flex: 1 }} />
 
-      {/* ZONE B: Dot grid (anchored to bottom) */}
+      {/* ZONE B: Dot grid — anchored near bottom */}
       {config.metrics.year_progress && (
         <div
           style={{

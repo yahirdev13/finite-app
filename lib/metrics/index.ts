@@ -1,6 +1,7 @@
+// Central metrics calculator — aggregates all metric functions
+
 import { yearProgress } from "./time";
 import { lifeDayNumber, birthdayCountdown } from "./life";
-
 import type { UserConfig } from "@/lib/config";
 
 export interface AllMetrics {
